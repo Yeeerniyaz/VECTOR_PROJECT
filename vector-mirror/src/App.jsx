@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   MantineProvider,
   createTheme,
@@ -17,7 +17,6 @@ import "@mantine/carousel/styles.css";
 import DateClock from "./components/DateClock";
 import WeatherWidget from "./components/WeatherWidget";
 import AppsGrid from "./components/AppsGrid";
-// import HealthWidget from './components/HealthWidget'; // <--- УБРАЛИ ЛИШНЕЕ
 import TimerApp from "./components/TimerApp";
 import SystemApp from "./components/SystemApp";
 
@@ -40,6 +39,7 @@ const theme = createTheme({
   primaryColor: "brand",
 });
 
+// Подключаемся к VPS
 const socket = io("https://vector.yeee.kz", { query: { type: "mirror" } });
 
 // --- СЛАЙД 1: ДАШБОРД ---
@@ -80,14 +80,54 @@ function App() {
   const [sensorData, setSensorData] = useState(null);
   const [activeApp, setActiveApp] = useState(null);
 
+  // Ссылка для управления слайдером
+  const emblaRef = useRef(null);
+
   useEffect(() => {
     socket.on("connect", () => setIsConnected(true));
     socket.on("disconnect", () => setIsConnected(false));
     socket.on("sensor_data", (data) => setSensorData(data));
+
+    // 🔥 ДОБАВЛЕНО: Слушаем команды с телефона
+    socket.on("control_command", (cmd) => {
+      console.log("⚡ Команда:", cmd.action);
+
+      switch (cmd.action) {
+        case "SLIDE_NEXT":
+          emblaRef.current?.scrollNext();
+          break;
+        case "SLIDE_PREV":
+          emblaRef.current?.scrollPrev();
+          break;
+        case "OPEN_YOUTUBE":
+          if (window.electronAPI) window.electronAPI.openYouTube();
+          break;
+        case "OPEN_TIMER":
+          setActiveApp("TIMER");
+          break;
+        case "CLOSE_MODAL":
+          setActiveApp(null);
+          break;
+        case "RELOAD":
+          if (window.electronAPI) window.electronAPI.reloadApp();
+          else window.location.reload();
+          break;
+        case "CLOSE_YOUTUBE":
+          // Закрываем окно Electron
+          if (window.electronAPI) window.electronAPI.closeYouTube();
+          // И заодно закрываем модалки React
+          setActiveApp(null);
+          break;
+        default:
+          console.warn("Неизвестная команда:", cmd.action);
+      }
+    });
+
     return () => {
       socket.off("connect");
       socket.off("disconnect");
       socket.off("sensor_data");
+      socket.off("control_command"); // Не забываем отписаться
     };
   }, []);
 
@@ -114,14 +154,18 @@ function App() {
           }}
         />
 
-        {/* СЛАЙДЕР */}
-        <Carousel height="100vh" withIndicators loop withControls={false}>
-          {/* Экран 1: Главный */}
+        {/* СЛАЙДЕР (Добавили getEmblaApi) */}
+        <Carousel
+          height="100vh"
+          withIndicators
+          loop
+          withControls={false}
+          getEmblaApi={(embla) => (emblaRef.current = embla)}
+        >
           <Carousel.Slide>
             <DashboardSlide sensorData={sensorData} />
           </Carousel.Slide>
 
-          {/* Экран 2: Меню приложений (Таймер, Система и т.д.) */}
           <Carousel.Slide>
             <AppsGrid onOpenApp={setActiveApp} />
           </Carousel.Slide>

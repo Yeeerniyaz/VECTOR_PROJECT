@@ -2,7 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   openYouTube: () => ipcRenderer.send('open-youtube'),
+  closeYouTube: () => ipcRenderer.send('close-youtube'), // <--- ДОБАВИЛИ ЭТО
   reloadApp: () => ipcRenderer.send('system-reload'),
-  toggleDevTools: () => ipcRenderer.send('system-devtools'),
   quitApp: () => ipcRenderer.send('system-quit'),
 });

@@ -19,35 +19,63 @@ function App() {
   const emblaRef = useRef(null);
 
 useEffect(() => {
-  socket.on("control_command", (cmd) => {
-    console.log("🕹 Команда:", cmd.action);
-    switch (cmd.action) {
-      case "NAV_UP": case "NAV_DOWN": case "NAV_LEFT": case "NAV_RIGHT":
-      case "NAV_ENTER": case "NAV_BACK":
-        window.electronAPI?.ytNav(cmd.action.replace("NAV_", ""));
-        break;
-      case "VOL_UP": window.electronAPI?.ytNav("UP"); break;
-      case "VOL_DOWN": window.electronAPI?.ytNav("DOWN"); break;
-      case "SLIDE_NEXT": emblaRef.current?.scrollNext(); break;
-      case "SLIDE_PREV": emblaRef.current?.scrollPrev(); break;
-      case "OPEN_YOUTUBE": window.electronAPI?.openYouTube(); break;
-      case "CLOSE_YOUTUBE": window.electronAPI?.closeYouTube(); setActiveApp(null); setIsSleep(false); break;
-      case "SCREEN_OFF": setIsSleep(true); break;
-      case "SCREEN_ON": setIsSleep(false); break;
-      case "RELOAD": window.location.reload(); break;
-    }
-  });
-}, []);
+    socket.on("control_command", (cmd) => {
+      const embla = emblaRef.current;
+      const isAnimating = embla && !embla.internalEngine().animator.isTargetReached();
+
+      switch (cmd.action) {
+        // Навигация зеркала (с защитой от двойного клика)
+        case "SLIDE_NEXT": if (!isAnimating) embla?.scrollNext(); break;
+        case "SLIDE_PREV": if (!isAnimating) embla?.scrollPrev(); break;
+        
+        // Системные кнопки (Клавиатура)
+        case "KEY_UP": window.electronAPI?.sendKey("Up"); break;
+        case "KEY_DOWN": window.electronAPI?.sendKey("Down"); break;
+        case "KEY_LEFT": window.electronAPI?.sendKey("Left"); break;
+        case "KEY_RIGHT": window.electronAPI?.sendKey("Right"); break;
+        case "KEY_ENTER": window.electronAPI?.sendKey("Return"); break;
+        case "KEY_BACK": window.electronAPI?.sendKey("Escape"); break;
+
+        // Громкость системы
+        case "VOL_UP": window.electronAPI?.systemVolume("UP"); break;
+        case "VOL_DOWN": window.electronAPI?.systemVolume("DOWN"); break;
+        case "VOL_MUTE": window.electronAPI?.systemVolume("MUTE"); break;
+
+        case "SCREEN_OFF": setIsSleep(true); break;
+        case "SCREEN_ON": setIsSleep(false); break;
+        case "OPEN_YOUTUBE": window.electronAPI?.openYouTube(); break;
+        case "CLOSE_YOUTUBE": window.electronAPI?.closeYouTube(); break;
+        case "RELOAD": window.location.reload(); break;
+      }
+    });
+    return () => socket.off();
+  }, []);
 
   return (
-    <MantineProvider theme={createTheme({ primaryColor: 'orange' })} defaultColorScheme="dark">
-      <Box w="100vw" h="100vh" bg="black" c="white" style={{ overflow: "hidden", position: 'relative' }}>
-        
-        <Carousel height="100vh" withControls={false} getEmblaApi={(embla) => (emblaRef.current = embla)}>
+    <MantineProvider
+      theme={createTheme({ primaryColor: "orange" })}
+      defaultColorScheme="dark"
+    >
+      <Box
+        w="100vw"
+        h="100vh"
+        bg="black"
+        c="white"
+        style={{ overflow: "hidden", position: "relative" }}
+      >
+        <Carousel
+          height="100vh"
+          withControls={false}
+          getEmblaApi={(embla) => (emblaRef.current = embla)}
+        >
           <Carousel.Slide>
             <Grid p="xl">
-              <Grid.Col span={7}><DateClock /></Grid.Col>
-              <Grid.Col span={5}><WeatherWidget roomData={sensorData} /></Grid.Col>
+              <Grid.Col span={7}>
+                <DateClock />
+              </Grid.Col>
+              <Grid.Col span={5}>
+                <WeatherWidget roomData={sensorData} />
+              </Grid.Col>
             </Grid>
           </Carousel.Slide>
           <Carousel.Slide>
@@ -55,20 +83,25 @@ useEffect(() => {
           </Carousel.Slide>
         </Carousel>
 
-        <TimerApp isOpen={activeApp === "TIMER"} onClose={() => setActiveApp(null)} />
+        <TimerApp
+          isOpen={activeApp === "TIMER"}
+          onClose={() => setActiveApp(null)}
+        />
 
         {/* --- ЧЕРНЫЙ ЭКРАН (SLEEP MODE) --- */}
         {isSleep && (
-          <Box 
-            onClick={() => setIsSleep(false)} 
-            style={{ 
-              position: 'absolute', 
-              top: 0, left: 0, 
-              width: '100%', height: '100%', 
-              backgroundColor: 'black', 
+          <Box
+            onClick={() => setIsSleep(false)}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "black",
               zIndex: 9999,
-              cursor: 'none'
-            }} 
+              cursor: "none",
+            }}
           />
         )}
       </Box>

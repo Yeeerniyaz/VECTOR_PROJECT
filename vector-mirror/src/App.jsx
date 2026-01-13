@@ -10,7 +10,7 @@ import "@mantine/carousel/styles.css";
 import DateClock from "./components/DateClock";
 import WeatherWidget from "./components/WeatherWidget";
 import AppsGrid from "./components/AppsGrid";
-import HealthWidget from './components/HealthWidget';
+// import HealthWidget from './components/HealthWidget'; // <--- УБРАЛИ ЛИШНЕЕ
 import TimerApp from './components/TimerApp';
 import SystemApp from './components/SystemApp';
 
@@ -22,7 +22,6 @@ const theme = createTheme({
   primaryColor: "brand",
 });
 
-// Подключение к серверу умного дома (если запущен)
 const socket = io("http://localhost:5000");
 
 // --- СЛАЙД 1: ДАШБОРД ---
@@ -31,7 +30,6 @@ const DashboardSlide = ({ sensorData }) => (
     <Grid align="flex-start" gutter={50}>
       <Grid.Col span={7}><DateClock /></Grid.Col>
       <Grid.Col span={5} style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        {/* Передаем данные датчиков в погоду */}
         <WeatherWidget roomData={sensorData} /> 
       </Grid.Col>
     </Grid>
@@ -47,7 +45,7 @@ const DashboardSlide = ({ sensorData }) => (
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [sensorData, setSensorData] = useState(null);
-  const [activeApp, setActiveApp] = useState(null); // Управляет открытием окон
+  const [activeApp, setActiveApp] = useState(null);
 
   useEffect(() => {
     socket.on('connect', () => setIsConnected(true));
@@ -64,29 +62,26 @@ function App() {
     <MantineProvider theme={theme} defaultColorScheme="dark">
       <Box w="100vw" h="100vh" bg="black" c="white" style={{ overflow: "hidden", position: "relative" }}>
         
-        {/* Индикатор статуса сервера (точка в углу) */}
+        {/* Индикатор статуса */}
         <Box style={{ position: "absolute", top: 20, right: 20, zIndex: 1000, width: 8, height: 8, borderRadius: "50%", backgroundColor: isConnected ? "#0f0" : "#333" }} />
 
         {/* СЛАЙДЕР */}
         <Carousel height="100vh" withIndicators loop withControls={false}>
+          {/* Экран 1: Главный */}
           <Carousel.Slide><DashboardSlide sensorData={sensorData} /></Carousel.Slide>
-          <Carousel.Slide><HealthWidget /></Carousel.Slide>
           
-          {/* Меню приложений */}
+          {/* Экран 2: Меню приложений (Таймер, Система и т.д.) */}
           <Carousel.Slide>
              <AppsGrid onOpenApp={setActiveApp} /> 
           </Carousel.Slide>
         </Carousel>
 
-        {/* --- МОДАЛЬНЫЕ ОКНА (Поверх всего) --- */}
-        
-        {/* Таймер */}
+        {/* --- МОДАЛЬНЫЕ ОКНА --- */}
         <TimerApp 
           isOpen={activeApp === 'TIMER'} 
           onClose={() => setActiveApp(null)} 
         />
 
-        {/* Системное меню */}
         <SystemApp 
           isOpen={activeApp === 'SYSTEM'} 
           onClose={() => setActiveApp(null)} 

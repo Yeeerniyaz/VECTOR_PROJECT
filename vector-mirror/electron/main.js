@@ -10,8 +10,8 @@ function createWindow() {
 
   mainWindow = new BrowserWindow({
     // Размеры для теста на ПК (как вертикальный планшет)
-    width: 600,
-    height: 1000,
+    width: 1080,
+    height: 1920,
 
     // НА ЗЕРКАЛЕ: Включится полный экран
     // НА ПК: Будет просто окно

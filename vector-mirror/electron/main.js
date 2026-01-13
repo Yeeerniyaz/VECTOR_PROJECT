@@ -7,7 +7,7 @@ let ytWindow = null;
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1366, height: 768,
-    fullscreen: !app.isPackaged, frame: false,
+    fullscreen: true, frame: false, autoHideMenuBar: true,
     backgroundColor: '#000000',
     webPreferences: { preload: path.join(__dirname, 'preload.js') }
   });
@@ -16,7 +16,22 @@ function createWindow() {
 
 app.whenReady().then(createWindow);
 
-// --- MEDIA CONTROL ---
+// --- СУПЕР-КОНТРОЛЛЕР ---
+ipcMain.on('yt-nav', (e, key) => {
+  if (!ytWindow) return;
+  // Маппинг для YouTube Leanback
+  const keys = {
+    'UP': 'Up', 'DOWN': 'Down', 'LEFT': 'Left', 'RIGHT': 'Right', 
+    'ENTER': 'Enter', 'BACK': 'Escape'
+  };
+  const code = keys[key];
+  if (code) {
+    // Посылаем нажатие и отпускание клавиши
+    ytWindow.webContents.sendInputEvent({ type: 'keyDown', keyCode: code });
+    ytWindow.webContents.sendInputEvent({ type: 'keyUp', keyCode: code });
+  }
+});
+
 ipcMain.on('open-youtube', () => {
   if (ytWindow) return;
   const { width, height } = screen.getPrimaryDisplay().bounds;
@@ -31,12 +46,5 @@ ipcMain.on('open-youtube', () => {
   ytWindow.on('closed', () => { ytWindow = null; });
 });
 
-ipcMain.on('close-youtube', () => { if (ytWindow) { ytWindow.close(); ytWindow = null; } });
-
-ipcMain.on('media-volume', (e, action) => {
-  if (!ytWindow) return;
-  const key = action === 'UP' ? 'Up' : action === 'DOWN' ? 'Down' : null;
-  if (key) ytWindow.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
-});
-
+ipcMain.on('close-youtube', () => { if (ytWindow) ytWindow.close(); });
 ipcMain.on('system-reload', () => mainWindow.reload());

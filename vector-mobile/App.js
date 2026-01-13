@@ -6,53 +6,64 @@ const socket = io('https://vector.yeee.kz', { transports: ['websocket'], query: 
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(false);
-  const send = (action) => { Vibration.vibrate(15); socket.emit('send_command', { action }); };
+  const send = (action) => { Vibration.vibrate(10); socket.emit('send_command', { action }); };
 
   useEffect(() => {
     socket.on('connect', () => setIsConnected(true));
     socket.on('disconnect', () => setIsConnected(false));
   }, []);
 
-  const Card = ({ title, action, icon, color = '#111' }) => (
-    <TouchableOpacity style={[styles.card, { backgroundColor: color }]} onPress={() => send(action)}>
-      <Text style={styles.cardIcon}>{icon}</Text>
-      <Text style={styles.cardTitle}>{title}</Text>
+  const NavBtn = ({ title, action, style }) => (
+    <TouchableOpacity style={[styles.navBtn, style]} onPress={() => send(action)}>
+      <Text style={styles.navText}>{title}</Text>
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.logo}>VECTOR <Text style={{color:'#FF5700'}}>CORE</Text></Text>
-        <View style={[styles.dot, { backgroundColor: isConnected ? '#0f0' : '#333' }]} />
+        <Text style={styles.logo}>VECTOR <Text style={{color:'#FF5700'}}>PRO</Text></Text>
+        <View style={[styles.dot, { backgroundColor: isConnected ? '#0f0' : '#f00' }]} />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 15 }}>
-        <Text style={styles.label}>NAVIGATION</Text>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        
+        {/* ДЖОЙСТИК (D-PAD) */}
+        <Text style={styles.label}>YOUTUBE NAVIGATION</Text>
+        <View style={styles.dpadContainer}>
+          <NavBtn title="▲" action="NAV_UP" style={styles.up} />
+          <View style={styles.dpadRow}>
+            <NavBtn title="◀" action="NAV_LEFT" />
+            <NavBtn title="OK" action="NAV_ENTER" style={styles.okBtn} />
+            <NavBtn title="▶" action="NAV_RIGHT" />
+          </View>
+          <NavBtn title="▼" action="NAV_DOWN" style={styles.down} />
+        </View>
+
         <View style={styles.row}>
-          <TouchableOpacity style={styles.navBtn} onPress={() => send('SLIDE_PREV')}><Text style={styles.navTxt}>BACK</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.navBtn} onPress={() => send('SLIDE_NEXT')}><Text style={styles.navTxt}>NEXT</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.backBtn} onPress={() => send('NAV_BACK')}><Text style={styles.navText}>BACK / ESC</Text></TouchableOpacity>
         </View>
 
-        <Text style={styles.label}>MEDIA</Text>
-        <View style={styles.grid}>
-          <Card title="YouTube" icon="📺" action="OPEN_YOUTUBE" />
-          <Card title="Close" icon="✕" action="CLOSE_YOUTUBE" color="#200" />
-        </View>
-
-        <Text style={styles.label}>VOLUME</Text>
+        {/* ГРОМКОСТЬ */}
+        <Text style={styles.label}>VOLUME CONTROL</Text>
         <View style={styles.row}>
-          <TouchableOpacity style={styles.volBtn} onPress={() => send('VOL_DOWN')}><Text style={styles.navTxt}>-</Text></TouchableOpacity>
-          <TouchableOpacity style={[styles.volBtn, {backgroundColor:'#FF5700'}]} onPress={() => send('VOL_UP')}><Text style={[styles.navTxt, {color:'#000'}]}>+</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.volBtn} onPress={() => send('VOL_DOWN')}><Text style={styles.navText}>VOL -</Text></TouchableOpacity>
+          <TouchableOpacity style={[styles.volBtn, {backgroundColor:'#FF5700'}]} onPress={() => send('VOL_UP')}><Text style={[styles.navText, {color:'#000'}]}>VOL +</Text></TouchableOpacity>
         </View>
 
-        <Text style={styles.label}>SYSTEM</Text>
+        {/* СИСТЕМА */}
+        <Text style={styles.label}>SYSTEM & MEDIA</Text>
         <View style={styles.grid}>
-          <Card title="Sleep" icon="🌙" action="SCREEN_OFF" />
-          <Card title="Wake" icon="☀️" action="SCREEN_ON" />
-          <Card title="Timer" icon="⏱" action="APP_TIMER" />
-          <Card title="Reload" icon="🔄" action="RELOAD" />
+          <TouchableOpacity style={[styles.card, {backgroundColor:'#1a1a1a'}]} onPress={() => send('OPEN_YOUTUBE')}><Text style={styles.cardTxt}>📺 OPEN YT</Text></TouchableOpacity>
+          <TouchableOpacity style={[styles.card, {backgroundColor:'#300'}]} onPress={() => send('CLOSE_YOUTUBE')}><Text style={[styles.cardTxt, {color:'#f55'}]}>✖ CLOSE ALL</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.card} onPress={() => send('SCREEN_OFF')}><Text style={styles.cardTxt}>🌙 SLEEP</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.card} onPress={() => send('SCREEN_ON')}><Text style={styles.cardTxt}>☀️ WAKE</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.card} onPress={() => send('SLIDE_PREV')}><Text style={styles.cardTxt}>◀ SLIDE</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.card} onPress={() => send('SLIDE_NEXT')}><Text style={styles.cardTxt}>SLIDE ▶</Text></TouchableOpacity>
         </View>
+
+        <TouchableOpacity style={styles.reloadBtn} onPress={() => send('RELOAD')}><Text style={styles.reloadTxt}>REBOOT SYSTEM</Text></TouchableOpacity>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -60,16 +71,22 @@ export default function App() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  header: { padding: 25, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  logo: { color: '#fff', fontSize: 24, fontWeight: '900', letterSpacing: 2 },
-  dot: { width: 10, height: 10, borderRadius: 5 },
+  header: { padding: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  logo: { color: '#fff', fontSize: 24, fontWeight: '900', letterSpacing: 3 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  scroll: { padding: 15 },
   label: { color: '#444', fontSize: 10, fontWeight: 'bold', marginVertical: 15, letterSpacing: 2 },
-  row: { flexDirection: 'row', gap: 10 },
+  dpadContainer: { alignItems: 'center', marginVertical: 10 },
+  dpadRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 10 },
+  navBtn: { width: 70, height: 70, backgroundColor: '#111', borderRadius: 15, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#222' },
+  okBtn: { backgroundColor: '#222', borderColor: '#FF5700', marginHorizontal: 15 },
+  navText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  row: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  backBtn: { flex: 1, height: 50, backgroundColor: '#111', borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  volBtn: { flex: 1, height: 60, backgroundColor: '#111', borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  navBtn: { flex: 1, height: 60, backgroundColor: '#111', borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
-  volBtn: { flex: 1, height: 50, backgroundColor: '#111', borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  navTxt: { color: '#fff', fontWeight: 'bold' },
-  card: { width: '48%', height: 100, borderRadius: 20, padding: 15, justifyContent: 'center' },
-  cardIcon: { fontSize: 20, marginBottom: 5 },
-  cardTitle: { color: '#fff', fontWeight: 'bold', fontSize: 13 }
+  card: { width: '48%', height: 80, backgroundColor: '#111', borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
+  cardTxt: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
+  reloadBtn: { marginTop: 40, height: 50, borderRadius: 10, borderStyle: 'dashed', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' },
+  reloadTxt: { color: '#444', fontSize: 12, fontWeight: 'bold' }
 });

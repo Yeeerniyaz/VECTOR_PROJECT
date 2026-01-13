@@ -5,15 +5,19 @@ import cors from 'cors';
 
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer, { cors: { origin: "*" } });
+const io = new Server(httpServer, {
+  cors: { origin: "*", methods: ["GET", "POST"] },
+  transports: ['websocket'] // Форсируем вебсокеты для VPS
+});
 
 io.on('connection', (socket) => {
-  console.log(`🔌 Подключился: ${socket.handshake.query.type || 'unknown'}`);
+  const type = socket.handshake.query.type || "unknown";
+  console.log(`🔌 Connect: ${type} [${socket.id}]`);
 
   socket.on('send_command', (cmd) => {
-    console.log(`📡 Команда: ${cmd.action}`);
-    io.emit('control_command', cmd); // Рассылаем всем
+    console.log(`📡 Command: ${cmd.action}`);
+    io.emit('control_command', cmd); 
   });
 });
 
-httpServer.listen(5000, '0.0.0.0', () => console.log('🚀 Cloud Ready on port 5000'));
+httpServer.listen(5000, '0.0.0.0', () => console.log('🚀 VECTOR CLOUD READY'));

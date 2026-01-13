@@ -7,17 +7,22 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: { origin: "*", methods: ["GET", "POST"] },
-  transports: ['websocket'] // Форсируем вебсокеты для VPS
+  transports: ['websocket']
 });
 
 io.on('connection', (socket) => {
   const type = socket.handshake.query.type || "unknown";
-  console.log(`🔌 Connect: ${type} [${socket.id}]`);
+  console.log(`🔌 [CONNECT] Тип: ${type}, ID: ${socket.id}`);
 
   socket.on('send_command', (cmd) => {
-    console.log(`📡 Command: ${cmd.action}`);
-    io.emit('control_command', cmd); 
+    console.log(`📡 [COMMAND] Отправлено: ${cmd.action}`);
+    io.emit('control_command', cmd); // Трансляция всем
   });
+
+  socket.on('disconnect', () => console.log(`❌ [DISCONNECT] ${type}`));
 });
 
-httpServer.listen(5000, '0.0.0.0', () => console.log('🚀 VECTOR CLOUD READY'));
+const PORT = 5000;
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 VECTOR SERVER READY ON PORT ${PORT}`);
+});

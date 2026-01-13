@@ -7,31 +7,36 @@ let mainWindow, ytWindow = null;
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1366, height: 768,
-    fullscreen: process.platform === 'linux', // На Win лучше в окне для дебага
+    fullscreen: false, // На Windows для тестов лучше в окне
     frame: false,
     backgroundColor: '#000000',
-    webPreferences: { preload: path.join(__dirname, 'preload.js') }
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), nodeIntegration: false, contextIsolation: true }
   });
-  mainWindow.loadURL('http://localhost:5173');
+  
+  // Убедись, что Vite запущен!
+  mainWindow.loadURL('http://localhost:5173').catch(() => {
+    console.log("⚠️ Vite не запущен на 5173!");
+  });
 }
 
 app.whenReady().then(createWindow);
 
-// 🔥 УМНАЯ ГРОМКОСТЬ
+// 🔥 ЛОГИРОВАНИЕ ГРОМКОСТИ
 ipcMain.on('system-volume', (e, action) => {
-  let command = "";
-  if (process.platform === 'linux') {
-    let flag = action === 'UP' ? "5%+" : action === 'DOWN' ? "5%-" : "toggle";
-    command = `amixer sset 'Master' ${flag}`;
-  } else if (process.platform === 'win32') {
+  console.log(`🔊 [VOLUME] Действие: ${action}`);
+  if (process.platform === 'win32') {
     let char = action === 'UP' ? "175" : action === 'DOWN' ? "174" : "173";
-    command = `powershell -Command "(new-object -com wscript.shell).SendKeys([char]${char})"`;
+    let cmd = `powershell -Command "(new-object -com wscript.shell).SendKeys([char]${char})"`;
+    exec(cmd);
+  } else {
+    let flag = action === 'UP' ? "5%+" : action === 'DOWN' ? "5%-" : "toggle";
+    exec(`amixer sset 'Master' ${flag}`);
   }
-  if (command) exec(command);
 });
 
-// 🔥 ЭМУЛЯЦИЯ КЛАВИАТУРЫ
+// 🔥 ЛОГИРОВАНИЕ КЛАВИШ
 ipcMain.on('send-key', (e, key) => {
+  console.log(`⌨️ [KEY] Нажата клавиша: ${key}`);
   const target = ytWindow || mainWindow;
   if (target) {
     target.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
@@ -40,13 +45,16 @@ ipcMain.on('send-key', (e, key) => {
 });
 
 ipcMain.on('open-youtube', () => {
+  console.log("📺 [YT] Открытие YouTube TV");
   if (ytWindow) return;
   const { width, height } = screen.getPrimaryDisplay().bounds;
-  ytWindow = new BrowserWindow({ width, height: Math.round(width * 9/16), y: 150, frame: false, alwaysOnTop: true });
+  ytWindow = new BrowserWindow({ width, height: Math.round(width * 9/16), y: 100, frame: false, alwaysOnTop: true });
   ytWindow.loadURL('https://www.youtube.com/tv', { 
     userAgent: 'Mozilla/5.0 (SMART-TV; Linux; Tizen 5.0) AppleWebkit/538.1 (KHTML, like Gecko) SamsungBrowser/1.0 TV Safari/538.1' 
   });
 });
 
-ipcMain.on('close-youtube', () => { if (ytWindow) { ytWindow.close(); ytWindow = null; } });
-ipcMain.on('system-reload', () => mainWindow.reload());
+ipcMain.on('close-youtube', () => { 
+  console.log("❌ [YT] Закрытие");
+  if (ytWindow) { ytWindow.close(); ytWindow = null; } 
+});

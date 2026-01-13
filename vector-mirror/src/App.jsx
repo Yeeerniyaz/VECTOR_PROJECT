@@ -18,28 +18,30 @@ function App() {
   const [isSleep, setIsSleep] = useState(false); // Состояние сна
   const emblaRef = useRef(null);
 
-// ... внутри компонента App ...
+  // ... внутри компонента App ...
 useEffect(() => {
   socket.on("control_command", (cmd) => {
+    // 🔍 ТЕСТ: Если это сообщение появилось в консоли — связь есть!
+    console.log("📥 Получен сигнал от VPS:", cmd.action); 
+
     const embla = emblaRef.current;
-    // Блокировка: если карусель уже крутится, игнорируем команду скролла
+    // Блокировка двойного сдвига
     const isAnimating = embla && !embla.internalEngine().animator.isTargetReached();
 
+    if (cmd.action === "SLIDE_NEXT" && !isAnimating) embla?.scrollNext();
+    if (cmd.action === "SLIDE_PREV" && !isAnimating) embla?.scrollPrev();
+
     switch (cmd.action) {
-      case "SLIDE_NEXT": if (!isAnimating) embla?.scrollNext(); break;
-      case "SLIDE_PREV": if (!isAnimating) embla?.scrollPrev(); break;
-      
-      // Громкость системы
       case "VOL_UP": window.electronAPI?.systemVolume("UP"); break;
       case "VOL_DOWN": window.electronAPI?.systemVolume("DOWN"); break;
       case "VOL_MUTE": window.electronAPI?.systemVolume("MUTE"); break;
 
-      // Клавиши для YouTube
+      // Клавиши (KEY_UP, KEY_DOWN и т.д.)
       case "KEY_UP": window.electronAPI?.sendKey("Up"); break;
       case "KEY_DOWN": window.electronAPI?.sendKey("Down"); break;
       case "KEY_LEFT": window.electronAPI?.sendKey("Left"); break;
       case "KEY_RIGHT": window.electronAPI?.sendKey("Right"); break;
-      case "KEY_ENTER": window.electronAPI?.sendKey("Return"); break;
+      case "KEY_ENTER": window.electronAPI?.sendKey("Enter"); break;
       case "KEY_BACK": window.electronAPI?.sendKey("Escape"); break;
 
       case "SCREEN_OFF": setIsSleep(true); break;
@@ -51,6 +53,7 @@ useEffect(() => {
   });
   return () => socket.off();
 }, []);
+
 
   return (
     <MantineProvider

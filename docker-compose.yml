@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  # Наш облачный сервер (VPS)
+  vector-cloud:
+    container_name: vector_cloud
+    build:
+      context: ./vector-cloud   # <-- Указываем путь к папке сервера
+      dockerfile: Dockerfile    # <-- Имя файла инструкции
+    restart: always
+    ports:
+      - "5000:5000"             # Открываем порт наружу
+    networks:
+      - vector-net
+
+networks:
+  vector-net:
+    driver: bridge

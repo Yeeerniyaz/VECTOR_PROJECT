@@ -1,124 +1,99 @@
-/* src/App.jsx */
-import { Container, Box, Text, Center, Stack } from "@mantine/core";
-import { IconPlus, IconCloud, IconUserCircle } from "@tabler/icons-react";
-import { WidgetCard } from "./components/WidgetCard";
-import { ClockWidget } from "./components/ClockWidget";
+import React, { useEffect, useState } from "react";
+import { MantineProvider, createTheme, Box, Grid, Group, Text } from "@mantine/core";
+import { Carousel } from "@mantine/carousel";
+import { io } from "socket.io-client";
+import { IconBulb } from "@tabler/icons-react";
+import "@mantine/core/styles.css";
+import "@mantine/carousel/styles.css";
 
-// Настройка расположения (x, y, w, h)
-const layoutConfig = [
-  { id: "clock", x: 0, y: 0, w: 2, h: 2, type: "clock" }, // Часы слева
-  { id: "weather", x: 2, y: 0, w: 2, h: 2, type: "weather" }, // Погода справа
-  { id: "notes", x: 0, y: 2, w: 4, h: 2, type: "notes" }, // Заметки на всю ширину
-  { id: "home", x: 0, y: 6, w: 2, h: 2, type: "home" }, // Управление домом (внизу)
-];
+// Импорт компонентов
+import DateClock from "./components/DateClock";
+import WeatherWidget from "./components/WeatherWidget";
+import AppsGrid from "./components/AppsGrid";
+import HealthWidget from './components/HealthWidget';
+import TimerApp from './components/TimerApp';
+import SystemApp from './components/SystemApp';
+
+const theme = createTheme({
+  fontFamily: "Segoe UI, sans-serif",
+  colors: {
+    brand: ["#FFF0E6", "#FFD1B3", "#FFB380", "#FF944D", "#FF751A", "#FF5700", "#CC4600", "#993400", "#662300", "#331100"],
+  },
+  primaryColor: "brand",
+});
+
+// Подключение к серверу умного дома (если запущен)
+const socket = io("http://localhost:5000");
+
+// --- СЛАЙД 1: ДАШБОРД ---
+const DashboardSlide = ({ sensorData }) => (
+  <Box p="xl" h="100%" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Grid align="flex-start" gutter={50}>
+      <Grid.Col span={7}><DateClock /></Grid.Col>
+      <Grid.Col span={5} style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        {/* Передаем данные датчиков в погоду */}
+        <WeatherWidget roomData={sensorData} /> 
+      </Grid.Col>
+    </Grid>
+    <Box>
+      <Group justify="center" gap="xs" style={{ opacity: 0.7 }}>
+        <IconBulb size={24} color="#FF5700" />
+        <Text size="lg" ta="center" c="dimmed">VECTOR SYSTEM ONLINE</Text>
+      </Group>
+    </Box>
+  </Box>
+);
 
 function App() {
-  const totalCols = 4;
-  const totalRows = 8;
+  const [isConnected, setIsConnected] = useState(socket.connected);
+  const [sensorData, setSensorData] = useState(null);
+  const [activeApp, setActiveApp] = useState(null); // Управляет открытием окон
+
+  useEffect(() => {
+    socket.on('connect', () => setIsConnected(true));
+    socket.on('disconnect', () => setIsConnected(false));
+    socket.on('sensor_data', (data) => setSensorData(data));
+    return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('sensor_data');
+    };
+  }, []);
 
   return (
-    <Container
-      fluid
-      h="100vh"
-      p="md"
-      style={{ background: "#000", overflow: "hidden" }}
-    >
-      {/* CSS GRID СЕТКА */}
-      <Box
-        style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${totalCols}, 1fr)`,
-          gridTemplateRows: `repeat(${totalRows}, 1fr)`,
+    <MantineProvider theme={theme} defaultColorScheme="dark">
+      <Box w="100vw" h="100vh" bg="black" c="white" style={{ overflow: "hidden", position: "relative" }}>
+        
+        {/* Индикатор статуса сервера (точка в углу) */}
+        <Box style={{ position: "absolute", top: 20, right: 20, zIndex: 1000, width: 8, height: 8, borderRadius: "50%", backgroundColor: isConnected ? "#0f0" : "#333" }} />
 
-          gap: "24px", // <--- ВОТ ЭТО ЧИСЛО ДЕЛАЕТ МАГИЮ
+        {/* СЛАЙДЕР */}
+        <Carousel height="100vh" withIndicators loop withControls={false}>
+          <Carousel.Slide><DashboardSlide sensorData={sensorData} /></Carousel.Slide>
+          <Carousel.Slide><HealthWidget /></Carousel.Slide>
+          
+          {/* Меню приложений */}
+          <Carousel.Slide>
+             <AppsGrid onOpenApp={setActiveApp} /> 
+          </Carousel.Slide>
+        </Carousel>
 
-          height: "100%",
-          width: "100%",
-          padding: "24px", // Добавим и отступ от краев экрана
-        }}
-      >
-        {/* Рендерим виджеты */}
-        {layoutConfig.map((widget) => (
-          <Box
-            key={widget.id}
-            style={{
-              gridColumn: `span ${widget.w}`,
-              gridRow: `span ${widget.h}`,
-              // position: 'relative' // Если нужно будет что-то позиционировать
-            }}
-          >
-            {/* ЧАСЫ */}
-            {widget.type === "clock" && (
-              <WidgetCard>
-                <ClockWidget />
-              </WidgetCard>
-            )}
+        {/* --- МОДАЛЬНЫЕ ОКНА (Поверх всего) --- */}
+        
+        {/* Таймер */}
+        <TimerApp 
+          isOpen={activeApp === 'TIMER'} 
+          onClose={() => setActiveApp(null)} 
+        />
 
-            {/* ПОГОДА */}
-            {widget.type === "weather" && (
-              <WidgetCard title="Weather">
-                <Stack gap={0}>
-                  <IconCloud size={50} color="white" />
-                  <Text size="3rem" fw={300} style={{ lineHeight: 1 }}>
-                    -5°
-                  </Text>
-                  <Text c="dimmed">Almaty</Text>
-                </Stack>
-              </WidgetCard>
-            )}
+        {/* Системное меню */}
+        <SystemApp 
+          isOpen={activeApp === 'SYSTEM'} 
+          onClose={() => setActiveApp(null)} 
+        />
 
-            {/* ЗАМЕТКИ (Просто текст) */}
-            {widget.type === "notes" && (
-              <WidgetCard title="Tasks">
-                <Stack gap="xs">
-                  <Text size="lg">• Купить датчики</Text>
-                  <Text size="lg">• Проверить код</Text>
-                  <Text size="lg" c="dimmed" td="line-through">
-                    • Собрать каркас
-                  </Text>
-                </Stack>
-              </WidgetCard>
-            )}
-
-            {/* УМНЫЙ ДОМ */}
-            {widget.type === "home" && (
-              <WidgetCard title="Home">
-                <Center
-                  h="100%"
-                  style={{ border: "1px solid #333", borderRadius: 16 }}
-                >
-                  <Text>Свет: ВЫКЛ</Text>
-                </Center>
-              </WidgetCard>
-            )}
-          </Box>
-        ))}
-
-        {/* ПУСТОЙ СЛОТ (Для примера, как добавить) */}
-        <Box
-          style={{
-            gridColumn: "span 1",
-            gridRow: "span 1",
-            gridColumnStart: 4, // Ставим в 4 колонку
-            gridRowStart: 8, // В самый низ
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: 0.3, // Еле заметный
-          }}
-        >
-          <div
-            style={{
-              border: "1px dashed gray",
-              borderRadius: "50%",
-              padding: 10,
-            }}
-          >
-            <IconPlus size={20} color="gray" />
-          </div>
-        </Box>
       </Box>
-    </Container>
+    </MantineProvider>
   );
 }
 

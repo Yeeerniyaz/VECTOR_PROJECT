@@ -8,9 +8,11 @@
 body {
   margin: 0;
   padding: 0;
-  /* Тот самый Deep Black для слияния с отражением */
   background-color: #000000; 
   color: #ffffff;
-  overflow: hidden; /* Скрываем скроллбары, это же зеркало */
-  cursor: none; /* Пока скроем обычный курсор, позже сделаем Crosshair */
+  overflow: hidden;
+  
+  user-select: none; /* Отключаем выделение текста */
+  -webkit-user-select: none; /* Отключаем выделение текста */
+
 }

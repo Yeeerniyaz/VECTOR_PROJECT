@@ -1,18 +1,29 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Box, MantineProvider } from "@mantine/core";
+import { MantineProvider, createTheme, Box, Grid } from "@mantine/core";
 import { Carousel } from "@mantine/carousel";
 import { io } from "socket.io-client";
+import "@mantine/core/styles.css";
+import "@mantine/carousel/styles.css";
 
+import DateClock from "./components/DateClock";
+import WeatherWidget from "./components/WeatherWidget";
+import AppsGrid from "./components/AppsGrid";
+import TimerApp from "./components/TimerApp";
+
+// - Обнови строку подключения:
 const socket = io("https://vector.yeee.kz", { 
-  transports: ['websocket'],
+  transports: ["websocket"], // Добавь это!
   query: { type: "mirror" } 
 });
 
 function App() {
-  const [isSleep, setIsSleep] = useState(false);
+  const [sensorData, setSensorData] = useState(null);
+  const [activeApp, setActiveApp] = useState(null);
+  const [isSleep, setIsSleep] = useState(false); // Состояние сна
   const emblaRef = useRef(null);
 
-  useEffect(() => {
+  // ... внутри компонента App ...
+useEffect(() => {
     socket.on("control_command", (cmd) => {
       console.log("📥 Signal:", cmd.action);
       const embla = emblaRef.current;
@@ -44,20 +55,62 @@ function App() {
     });
     return () => socket.off();
   }, []);
-
   return (
-    <MantineProvider defaultColorScheme="dark">
-      <Box w="100vw" h="100vh" bg="black" style={{ position: 'relative', overflow: 'hidden' }}>
-        <Carousel withControls={false} getEmblaApi={(api) => (emblaRef.current = api)}>
-          <Carousel.Slide><Box p="xl"><h1>VECTOR CORE</h1></Box></Carousel.Slide>
-          <Carousel.Slide><Box p="xl"><h1>APPS GRID</h1></Box></Carousel.Slide>
+    <MantineProvider
+      theme={createTheme({ primaryColor: "orange" })}
+      defaultColorScheme="dark"
+    >
+      <Box
+        w="100vw"
+        h="100vh"
+        bg="black"
+        c="white"
+        style={{ overflow: "hidden", position: "relative" }}
+      >
+        <Carousel
+          height="100vh"
+          withControls={false}
+          getEmblaApi={(embla) => (emblaRef.current = embla)}
+        >
+          <Carousel.Slide>
+            <Grid p="xl">
+              <Grid.Col span={7}>
+                <DateClock />
+              </Grid.Col>
+              <Grid.Col span={5}>
+                <WeatherWidget roomData={sensorData} />
+              </Grid.Col>
+            </Grid>
+          </Carousel.Slide>
+          <Carousel.Slide>
+            <AppsGrid onOpenApp={setActiveApp} />
+          </Carousel.Slide>
         </Carousel>
 
+        <TimerApp
+          isOpen={activeApp === "TIMER"}
+          onClose={() => setActiveApp(null)}
+        />
+
+        {/* --- ЧЕРНЫЙ ЭКРАН (SLEEP MODE) --- */}
         {isSleep && (
-          <Box onClick={() => setIsSleep(false)} style={{ position: 'absolute', inset: 0, backgroundColor: 'black', zIndex: 9999 }} />
+          <Box
+            onClick={() => setIsSleep(false)}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "black",
+              zIndex: 9999,
+              cursor: "none",
+            }}
+          />
         )}
       </Box>
     </MantineProvider>
   );
 }
+
 export default App;

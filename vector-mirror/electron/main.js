@@ -10,12 +10,12 @@ function createWindow() {
 
   mainWindow = new BrowserWindow({
     // Размеры для теста на ПК (как вертикальный планшет)
-    width: 1080,
-    height: 1920,
+    width: 720,
+    height: 1280,
 
     // НА ЗЕРКАЛЕ: Включится полный экран
     // НА ПК: Будет просто окно
-    fullscreen: isDev, // Или поставь true, если хочешь сразу Fullscreen
+    fullscreen: !isDev, // Или поставь true, если хочешь сразу Fullscreen
 
     frame: isDev, // На ПК рамки нужны, чтобы закрыть/двигать. На зеркале — нет.
     autoHideMenuBar: true,

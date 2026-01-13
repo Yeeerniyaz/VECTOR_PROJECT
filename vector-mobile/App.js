@@ -1,116 +1,75 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  StyleSheet, Text, View, TouchableOpacity, SafeAreaView, StatusBar, Vibration, ScrollView 
-} from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Vibration, SafeAreaView } from 'react-native';
 import io from 'socket.io-client';
 
-// 🌍 ТВОЙ СЕРВЕР
-const SERVER_URL = 'https://vector.yeee.kz'; 
-
-const socket = io(SERVER_URL, {
-  transports: ['websocket'],
-  query: { type: 'mobile_native' }
-});
+const socket = io('https://vector.yeee.kz', { transports: ['websocket'], query: { type: 'mobile' } });
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(false);
+  const send = (action) => { Vibration.vibrate(15); socket.emit('send_command', { action }); };
 
   useEffect(() => {
     socket.on('connect', () => setIsConnected(true));
     socket.on('disconnect', () => setIsConnected(false));
-    return () => { socket.off('connect'); socket.off('disconnect'); };
   }, []);
 
-  const send = (action) => {
-    Vibration.vibrate(15);
-    if (isConnected) socket.emit('send_command', { action });
-  };
-
-  // Компонент Кнопки
-  const Btn = ({ title, action, type = 'default', icon = '' }) => {
-    let bg = '#1A1A1A';
-    let txt = '#FFF';
-    
-    if (type === 'primary') { bg = '#FF5700'; txt = '#000'; }
-    if (type === 'danger') { bg = '#330000'; txt = '#FF3333'; }
-    if (type === 'active') { bg = '#333'; }
-
-    return (
-      <TouchableOpacity 
-        style={[styles.btn, { backgroundColor: bg }]} 
-        activeOpacity={0.7}
-        onPress={() => send(action)}
-      >
-        <Text style={[styles.btnTxt, { color: txt }]}>{icon} {title}</Text>
-      </TouchableOpacity>
-    );
-  };
+  const Card = ({ title, action, icon, color = '#111' }) => (
+    <TouchableOpacity style={[styles.card, { backgroundColor: color }]} onPress={() => send(action)}>
+      <Text style={styles.cardIcon}>{icon}</Text>
+      <Text style={styles.cardTitle}>{title}</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
-      
       <View style={styles.header}>
-        <Text style={styles.logo}>VECTOR <Text style={{color:'#FF5700'}}>/</Text> REMOTE</Text>
-        <View style={styles.statusBadge}>
-            <View style={[styles.dot, { bg: isConnected ? '#0F0' : '#333' }]} />
-            <Text style={styles.statusTxt}>{isConnected ? 'ONLINE' : 'SEARCHING...'}</Text>
-        </View>
+        <Text style={styles.logo}>VECTOR <Text style={{color:'#FF5700'}}>CORE</Text></Text>
+        <View style={[styles.dot, { backgroundColor: isConnected ? '#0f0' : '#333' }]} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        
-        {/* 1. УПРАВЛЕНИЕ СЛАЙДАМИ */}
-        <Text style={styles.sectionTitle}>INTERFACE</Text>
+      <ScrollView contentContainerStyle={{ padding: 15 }}>
+        <Text style={styles.label}>NAVIGATION</Text>
         <View style={styles.row}>
-            <Btn title="PREV" action="SLIDE_PREV" type="active" icon="◀" />
-            <View style={{width:10}}/>
-            <Btn title="NEXT" action="SLIDE_NEXT" type="active" icon="▶" />
+          <TouchableOpacity style={styles.navBtn} onPress={() => send('SLIDE_PREV')}><Text style={styles.navTxt}>BACK</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.navBtn} onPress={() => send('SLIDE_NEXT')}><Text style={styles.navTxt}>NEXT</Text></TouchableOpacity>
         </View>
 
-        {/* 2. МЕДИА (YOUTUBE) */}
-        <Text style={styles.sectionTitle}>MEDIA CENTER</Text>
-        <View style={styles.card}>
-            <Btn title="OPEN YOUTUBE TV" action="OPEN_YOUTUBE" type="default" icon="📺" />
-            <View style={{height:10}}/>
-            {/* 🔥 ВОТ ОНА - КНОПКА ЗАКРЫТИЯ */}
-            <Btn title="CLOSE MEDIA / APPS" action="CLOSE_YOUTUBE" type="danger" icon="✖" />
-        </View>
-
-        {/* 3. ПРИЛОЖЕНИЯ */}
-        <Text style={styles.sectionTitle}>WIDGETS</Text>
+        <Text style={styles.label}>MEDIA</Text>
         <View style={styles.grid}>
-            <Btn title="TIMER" action="OPEN_TIMER" />
-            <Btn title="SYSTEM" action="OPEN_SYSTEM" />
+          <Card title="YouTube" icon="📺" action="OPEN_YOUTUBE" />
+          <Card title="Close" icon="✕" action="CLOSE_YOUTUBE" color="#200" />
         </View>
 
-        {/* 4. СИСТЕМА */}
-        <Text style={styles.sectionTitle}>SYSTEM CONTROL</Text>
-        <Btn title="RELOAD MIRROR" action="RELOAD" type="active" icon="🔄" />
+        <Text style={styles.label}>VOLUME</Text>
+        <View style={styles.row}>
+          <TouchableOpacity style={styles.volBtn} onPress={() => send('VOL_DOWN')}><Text style={styles.navTxt}>-</Text></TouchableOpacity>
+          <TouchableOpacity style={[styles.volBtn, {backgroundColor:'#FF5700'}]} onPress={() => send('VOL_UP')}><Text style={[styles.navTxt, {color:'#000'}]}>+</Text></TouchableOpacity>
+        </View>
 
+        <Text style={styles.label}>SYSTEM</Text>
+        <View style={styles.grid}>
+          <Card title="Sleep" icon="🌙" action="SCREEN_OFF" />
+          <Card title="Wake" icon="☀️" action="SCREEN_ON" />
+          <Card title="Timer" icon="⏱" action="APP_TIMER" />
+          <Card title="Reload" icon="🔄" action="RELOAD" />
+        </View>
       </ScrollView>
-
-      <Text style={styles.footer}>CONNECTED TO: {SERVER_URL}</Text>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  scroll: { padding: 20, paddingBottom: 50 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30, paddingHorizontal: 10, marginTop: 10 },
-  logo: { color: '#FFF', fontSize: 20, fontWeight: '900', letterSpacing: 2 },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  statusTxt: { color: '#666', fontSize: 10, fontWeight: 'bold' },
-  
-  sectionTitle: { color: '#666', fontSize: 12, fontWeight: 'bold', marginBottom: 10, marginTop: 20, letterSpacing: 1 },
-  
-  row: { flexDirection: 'row', flex: 1 },
-  grid: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
-  card: { backgroundColor: '#111', padding: 15, borderRadius: 16, borderWidth: 1, borderColor: '#222' },
-  
-  btn: { flex: 1, height: 60, borderRadius: 12, alignItems: 'center', justifyContent: 'center', minWidth: '45%' },
-  btnTxt: { fontSize: 14, fontWeight: 'bold', letterSpacing: 1 },
-  
-  footer: { position: 'absolute', bottom: 10, alignSelf: 'center', color: '#222', fontSize: 9 }
+  header: { padding: 25, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  logo: { color: '#fff', fontSize: 24, fontWeight: '900', letterSpacing: 2 },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  label: { color: '#444', fontSize: 10, fontWeight: 'bold', marginVertical: 15, letterSpacing: 2 },
+  row: { flexDirection: 'row', gap: 10 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  navBtn: { flex: 1, height: 60, backgroundColor: '#111', borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
+  volBtn: { flex: 1, height: 50, backgroundColor: '#111', borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  navTxt: { color: '#fff', fontWeight: 'bold' },
+  card: { width: '48%', height: 100, borderRadius: 20, padding: 15, justifyContent: 'center' },
+  cardIcon: { fontSize: 20, marginBottom: 5 },
+  cardTitle: { color: '#fff', fontWeight: 'bold', fontSize: 13 }
 });

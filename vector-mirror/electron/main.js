@@ -8,7 +8,7 @@ function createWindow() {
   const isDev = !app.isPackaged; 
   mainWindow = new BrowserWindow({
     width: 600, height: 1000,
-    fullscreen: isDev, frame: isDev, autoHideMenuBar: true,
+    fullscreen: !isDev, frame: !isDev, autoHideMenuBar: true,
     backgroundColor: '#000000',
     icon: path.join(__dirname, 'icon.png'),
     webPreferences: {

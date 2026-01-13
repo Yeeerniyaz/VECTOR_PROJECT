@@ -1,4 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
+
 contextBridge.exposeInMainWorld('electronAPI', {
   sendKey: (key) => ipcRenderer.send('send-key', key),
   systemVolume: (action) => ipcRenderer.send('system-volume', action),

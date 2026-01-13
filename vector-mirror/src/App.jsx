@@ -18,38 +18,39 @@ function App() {
   const [isSleep, setIsSleep] = useState(false); // Состояние сна
   const emblaRef = useRef(null);
 
+// ... внутри компонента App ...
 useEffect(() => {
-    socket.on("control_command", (cmd) => {
-      const embla = emblaRef.current;
-      const isAnimating = embla && !embla.internalEngine().animator.isTargetReached();
+  socket.on("control_command", (cmd) => {
+    const embla = emblaRef.current;
+    // Блокировка: если карусель уже крутится, игнорируем команду скролла
+    const isAnimating = embla && !embla.internalEngine().animator.isTargetReached();
 
-      switch (cmd.action) {
-        // Навигация зеркала (с защитой от двойного клика)
-        case "SLIDE_NEXT": if (!isAnimating) embla?.scrollNext(); break;
-        case "SLIDE_PREV": if (!isAnimating) embla?.scrollPrev(); break;
-        
-        // Системные кнопки (Клавиатура)
-        case "KEY_UP": window.electronAPI?.sendKey("Up"); break;
-        case "KEY_DOWN": window.electronAPI?.sendKey("Down"); break;
-        case "KEY_LEFT": window.electronAPI?.sendKey("Left"); break;
-        case "KEY_RIGHT": window.electronAPI?.sendKey("Right"); break;
-        case "KEY_ENTER": window.electronAPI?.sendKey("Return"); break;
-        case "KEY_BACK": window.electronAPI?.sendKey("Escape"); break;
+    switch (cmd.action) {
+      case "SLIDE_NEXT": if (!isAnimating) embla?.scrollNext(); break;
+      case "SLIDE_PREV": if (!isAnimating) embla?.scrollPrev(); break;
+      
+      // Громкость системы
+      case "VOL_UP": window.electronAPI?.systemVolume("UP"); break;
+      case "VOL_DOWN": window.electronAPI?.systemVolume("DOWN"); break;
+      case "VOL_MUTE": window.electronAPI?.systemVolume("MUTE"); break;
 
-        // Громкость системы
-        case "VOL_UP": window.electronAPI?.systemVolume("UP"); break;
-        case "VOL_DOWN": window.electronAPI?.systemVolume("DOWN"); break;
-        case "VOL_MUTE": window.electronAPI?.systemVolume("MUTE"); break;
+      // Клавиши для YouTube
+      case "KEY_UP": window.electronAPI?.sendKey("Up"); break;
+      case "KEY_DOWN": window.electronAPI?.sendKey("Down"); break;
+      case "KEY_LEFT": window.electronAPI?.sendKey("Left"); break;
+      case "KEY_RIGHT": window.electronAPI?.sendKey("Right"); break;
+      case "KEY_ENTER": window.electronAPI?.sendKey("Return"); break;
+      case "KEY_BACK": window.electronAPI?.sendKey("Escape"); break;
 
-        case "SCREEN_OFF": setIsSleep(true); break;
-        case "SCREEN_ON": setIsSleep(false); break;
-        case "OPEN_YOUTUBE": window.electronAPI?.openYouTube(); break;
-        case "CLOSE_YOUTUBE": window.electronAPI?.closeYouTube(); break;
-        case "RELOAD": window.location.reload(); break;
-      }
-    });
-    return () => socket.off();
-  }, []);
+      case "SCREEN_OFF": setIsSleep(true); break;
+      case "SCREEN_ON": setIsSleep(false); break;
+      case "OPEN_YOUTUBE": window.electronAPI?.openYouTube(); break;
+      case "CLOSE_YOUTUBE": window.electronAPI?.closeYouTube(); break;
+      case "RELOAD": window.location.reload(); break;
+    }
+  });
+  return () => socket.off();
+}, []);
 
   return (
     <MantineProvider

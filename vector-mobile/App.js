@@ -18,7 +18,7 @@ const socket = io("https://vector.yeee.kz", {
 export default function App() {
   const [isConnected, setIsConnected] = useState(false);
   const send = (action) => {
-    Vibration.vibrate(10);
+    Vibration.vibrate(12);
     socket.emit("send_command", { action });
   };
 
@@ -27,12 +27,12 @@ export default function App() {
     socket.on("disconnect", () => setIsConnected(false));
   }, []);
 
-  const RoundBtn = ({ icon, action, color = "#111" }) => (
+  const RoundBtn = ({ icon, action, size = 65 }) => (
     <TouchableOpacity
-      style={[styles.roundBtn, { backgroundColor: color }]}
+      style={[styles.roundBtn, { width: size, height: size }]}
       onPress={() => send(action)}
     >
-      <Text style={styles.btnText}>{icon}</Text>
+      <Text style={styles.btnTxt}>{icon}</Text>
     </TouchableOpacity>
   );
 
@@ -59,52 +59,52 @@ export default function App() {
               style={styles.okBtn}
               onPress={() => send("KEY_ENTER")}
             >
-              <View style={styles.okInner} />
+              <View style={styles.okDot} />
             </TouchableOpacity>
             <RoundBtn icon="▶" action="KEY_RIGHT" />
           </View>
           <RoundBtn icon="▼" action="KEY_DOWN" />
         </View>
 
-        <View style={styles.controls}>
+        <View style={styles.controlsRow}>
           <View style={styles.volCol}>
             <TouchableOpacity
-              style={styles.volBtn}
+              style={styles.vBtn}
               onPress={() => send("VOL_UP")}
             >
-              <Text style={styles.volTxt}>+</Text>
+              <Text style={styles.vTxt}>+</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.volBtn, { backgroundColor: "#FF5700" }]}
+              style={[styles.vBtn, { backgroundColor: "#FF5700" }]}
               onPress={() => send("VOL_MUTE")}
             >
-              <Text style={styles.volTxt}>M</Text>
+              <Text style={styles.vTxt}>M</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.volBtn}
+              style={styles.vBtn}
               onPress={() => send("VOL_DOWN")}
             >
-              <Text style={styles.volTxt}>-</Text>
+              <Text style={styles.vTxt}>-</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.navCol}>
             <TouchableOpacity
-              style={styles.longBtn}
+              style={styles.long}
               onPress={() => send("KEY_BACK")}
             >
-              <Text style={styles.longBtnTxt}>ESC / BACK</Text>
+              <Text style={styles.lTxt}>ESC / BACK</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.longBtn}
+              style={styles.long}
               onPress={() => send("SLIDE_PREV")}
             >
-              <Text style={styles.longBtnTxt}>PREV SLIDE</Text>
+              <Text style={styles.lTxt}>PREV SLIDE</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.longBtn}
+              style={styles.long}
               onPress={() => send("SLIDE_NEXT")}
             >
-              <Text style={styles.longBtnTxt}>NEXT SLIDE</Text>
+              <Text style={styles.lTxt}>NEXT SLIDE</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -117,7 +117,7 @@ export default function App() {
             <Text style={{ color: "#fff" }}>YT</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.app}
+            style={[styles.app, { borderColor: "#FF5700" }]}
             onPress={() => send("CLOSE_YOUTUBE")}
           >
             <Text style={{ color: "#FF5700" }}>✕</Text>
@@ -145,14 +145,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  logo: { color: "#fff", fontSize: 18, letterSpacing: 6 },
+  logo: { color: "#fff", fontSize: 16, letterSpacing: 8 },
   status: { width: 4, height: 4, borderRadius: 2 },
   scroll: { paddingHorizontal: 20 },
   dpad: { alignItems: "center", marginVertical: 20 },
   dpadRow: { flexDirection: "row", alignItems: "center", marginVertical: 10 },
   roundBtn: {
-    width: 65,
-    height: 65,
     borderRadius: 32,
     justifyContent: "center",
     alignItems: "center",
@@ -170,29 +168,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#333",
   },
-  okInner: {
-    width: 15,
-    height: 15,
-    borderRadius: 8,
-    backgroundColor: "#FF5700",
-  },
-  btnText: { color: "#fff", fontSize: 20 },
-  controls: {
+  okDot: { width: 15, height: 15, borderRadius: 8, backgroundColor: "#FF5700" },
+  btnTxt: { color: "#fff", fontSize: 24 },
+  controlsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 20,
   },
   volCol: { width: "22%", gap: 10 },
-  volBtn: {
+  vBtn: {
     height: 60,
     backgroundColor: "#111",
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
   },
-  volTxt: { color: "#fff", fontWeight: "bold" },
+  vTxt: { color: "#fff", fontWeight: "bold" },
   navCol: { width: "73%", gap: 10 },
-  longBtn: {
+  long: {
     flex: 1,
     backgroundColor: "#080808",
     borderRadius: 30,
@@ -201,7 +194,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#111",
   },
-  longBtnTxt: { color: "#444", fontSize: 10, fontWeight: "bold" },
+  lTxt: { color: "#444", fontSize: 10, fontWeight: "bold" },
   apps: {
     flexDirection: "row",
     justifyContent: "space-between",
